@@ -5,7 +5,7 @@ Ext.onReady(function() {
         width: '100%',
         border: false,
         items: [
-            {asadasa
+            {
                 xtype: 'fieldset',
                 items: [
                     {
