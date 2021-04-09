@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public class CreateDagTest {
 
-	public static void main(String[] args) throws Exception {
+	public static voi,,d main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		FileWriter out=new FileWriter("C:/Users/krishna/Desktop/krishna.py");
 		BufferedWriter writer=new BufferedWriter(out);
