@@ -1,0 +1,720 @@
+using System;
+using System.Threading;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Xamarin.Forms;
+
+namespace UI_test_cross_platform
+{
+    public class RespondToOfferPage : MyContentPage
+    {
+         Image backButtonIcon = CommonUtility.getBackButtonIcon();
+        String chatId = "";
+        String chat_title = "";
+        String chat_pp = "";
+        Label aboutLabel = new Label
+        {
+            Text = "\nAbout",
+            FontSize = Device.GetNamedSize(NamedSize.Large, typeof(Label)),
+            FontAttributes = FontAttributes.Bold
+        };
+        Image offer_pic = new Image //device user pro pic
+        {
+            //HeightRequest = 150,
+            Aspect = Aspect.AspectFit,
+            //Source = CommonImage.rectangularshapeIcon
+        };
+        UI_test_cross_platform.OffersDatabase.OfferDbEntry currentOffer;
+        Label creatorName;
+        Label offerTitle;
+        Label offerDescription;
+        Label offerDate;
+        Label offerLocation;
+        Label offerExpiration;
+        OffersDatabase db;
+        Grid contentGrid;
+        RespondToOffer respondToOffer;
+        Image topdoticon = new Image
+        {
+            Margin = new Thickness(0, 0, 7, 0),
+            HeightRequest = 40,
+            WidthRequest = 40,
+            Source = CommonImage.threedotIcon
+        };
+        Label viewRepliesBtn = new Label
+        {
+            Text = CommonLabelText.guestText,
+            TextColor = CommonColor.darkSkyBlueColor,
+            FontSize = 18,
+            // IsVisible = false,
+            Margin = new Thickness(0, 10, 0, 0),
+            HorizontalOptions = LayoutOptions.Center
+        };
+        Label viewCommentBtn = new Label
+        {
+            Text = "Comments(0)",
+            TextColor = CommonColor.darkSkyBlueColor,
+            FontSize = 18,
+            //IsVisible = false,
+            Margin = new Thickness(0, 10, 0, 0),
+            HorizontalOptions = LayoutOptions.Center
+        };
+        ActivityIndicator spinner = CommonUtility.spinner;
+        //timer 
+        System.Threading.Timer timer;
+        Image AcceptOfferButton;
+        Image DeclineOfferButton;
+        Image vertical_icon = CommonUtility.getVerticalIcon();
+
+        void initializeElements()
+        {
+            //vertical_icon.IsVisible = true;
+            //acceptRejectBtnClicked = false;
+            respondToOffer = new RespondToOffer();
+            AcceptOfferButton = respondToOffer.AcceptOfferButton;
+            DeclineOfferButton = respondToOffer.DeclineOfferButton;
+            //viewRepliesBtn = respondToOffer.viewRepliesBtn;
+            //viewRepliesBtn.HorizontalOptions = LayoutOptions.Center;
+
+            // = respondToOffer.viewCommentBtn;
+            //.HorizontalOptions = LayoutOptions.Center;
+            //viewRepliesBtn.IsVisible = false;
+            creatorName = respondToOffer.creatorName;
+            offerTitle = respondToOffer.offerTitle;
+            offerDescription = respondToOffer.offerDescription;
+            offerDate = respondToOffer.offerDate;
+            offerLocation = respondToOffer.offerLocation;
+            offerExpiration = respondToOffer.offerExpiration;
+
+            contentGrid = respondToOffer.contentGrid;  
+        }
+
+        ScrollView scrolview;
+        public RespondToOfferPage(string global_offer_id,String offerCreatorImage)
+        {
+            initializeElements();
+            
+
+            db = new OffersDatabase(OffersDatabase.DefaultDatabaseName);
+            var offer = db.GetOfferByGlobalOfferId(global_offer_id);
+            currentOffer = offer;
+            creatorName.Text = offer.offerSender;
+
+            offerTitle.Text = offer.title;
+            offerDescription.Text = offer.message;
+            offerDate.Text =  offer.eventdate.ToLocalTime().ToString("MMM dd") + " | " + offer.eventdate.ToLocalTime().ToShortTimeString() ;
+            //Console.WriteLine("locations is "+offer.location);
+            offerLocation.Text = offer.location;
+
+            offerExpiration.Text = offer.timeLeftUntillExpirationToString();//offer.expirationdate.ToLocalTime().ToLongDateString() + " " + offer.expirationdate.ToLocalTime().ToLongTimeString();
+          
+
+            if (offer.offer_pic_url != null && offer.offer_pic_url != "")
+            {
+                offer_pic.HeightRequest = 200;
+                offer_pic.Aspect = Aspect.AspectFill;
+                offer_pic.Source = offer.offer_pic_url;
+            }
+
+            //topGrid.Children.Add(offerLabel, 1, 9, 2, 3);
+            //topGrid.Children.Add(backButtonIcon, 0, 1, 5, 6);
+            //topGrid.Children.Add(creatorName, 1, 9, 5, 6);
+           
+
+            contentGrid.Children.Add(offer_pic, 0, 10, 0, 1);
+            contentGrid.Children.Add(viewRepliesBtn, 0, 4, 1, 2);
+            contentGrid.Children.Add(vertical_icon, 4, 6, 1, 2);
+            contentGrid.Children.Add(viewCommentBtn, 6, 10, 1, 2);//15,16
+            //contentGrid.Children.Add(CommonUtility1.getGrayLineSeparator(),0, 10, 1, 2);
+
+            contentGrid.Children.Add(offerTitle, 1, 9, 3, 4);
+            contentGrid.Children.Add(offerDate, 1, 9, 4, 5);
+            contentGrid.Children.Add(offerLocation, 1, 9, 5, 6);//6,7
+            contentGrid.Children.Add(aboutLabel, 1, 9, 7, 8);//6,7
+            contentGrid.Children.Add(offerDescription, 1, 9, 8, 10);//6,7
+
+
+            contentGrid.Children.Add(offerExpiration, 1, 9, 10, 11);//6,7
+            contentGrid.Children.Add(AcceptOfferButton, 0, 5, 11, 12);//6,7
+            contentGrid.Children.Add(DeclineOfferButton, 5, 10, 11, 12);//6,7
+
+            contentGrid.Children.Add(spinner, 4, 6, 12, 13);
+
+
+            //contentGrid.Children.Add(s3, 1, 9, 4, 5);//8,9
+
+            backButtonIcon.Source = CommonImage.whitearrowIcon;
+            emptyLabel.Text = offer.offerSender;
+            emptyTopGrid.Children.Add(backButtonIcon, 0, 1, 3, 4);
+            emptyTopGrid.Children.Add(emptyLabel, 2, 8, 3, 4);
+            emptyTopGrid.Children.Add(topdoticon, 9, 10, 3, 4);
+            //emptyTopGrid.Children.Add(CommonUtility1.getGrayLineSeparator(), 0, 12, 5, 6);
+
+            scrolview = new ScrollView { Content = contentGrid };
+            var layout = new StackLayout
+            {
+                Padding = new Thickness(0, 10, 0, 0),
+                Spacing = 1,
+                Children ={
+                        emptyTopGrid,
+                        scrolview,
+                        bottomGrigLayout
+                    }
+            };
+
+            var main = new Grid();//for holding content
+            main.Children.Add(layout);
+            //outer.Children.Add(inner);
+
+            Content = main;
+
+            MessagingCenter.Subscribe<string>(this, MessagingCenterHelper.UPDATE_RESPONDTOOFFER_TIME_REMAINING, async (timeLeft) =>
+                        {
+                            try
+                            {
+                                offerExpiration.Text = timeLeft;
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                            }
+
+                        });
+
+
+            var tapGestureRecognizerAcceptOfferButton = new TapGestureRecognizer();
+            tapGestureRecognizerAcceptOfferButton.Tapped += (s, item) =>
+            {
+                AcceptOfferButton_Clicked();
+            };
+            AcceptOfferButton.GestureRecognizers.Add(tapGestureRecognizerAcceptOfferButton);
+
+
+            var tapGestureRecognizerDeclineOfferButton = new TapGestureRecognizer();
+            tapGestureRecognizerDeclineOfferButton.Tapped += (s, item) =>
+            {
+                RejectOfferButton_Clicked();
+            };
+            DeclineOfferButton.GestureRecognizers.Add(tapGestureRecognizerDeclineOfferButton);
+
+            var tapGestureRecognizerBackIcon = new TapGestureRecognizer();
+                        tapGestureRecognizerBackIcon.Tapped += (s, item) =>
+                        {
+                            Navigation.PushModalAsync(new HomePage(), false);
+                        };
+            backButtonIcon.GestureRecognizers.Add(tapGestureRecognizerBackIcon);
+
+            //timer
+            timer = new System.Threading.Timer(new System.Threading.TimerCallback(this.CheckStatus), null, 1000, 1000);
+
+            var tapGestureRecognizerForViewReplies = new TapGestureRecognizer();
+            tapGestureRecognizerForViewReplies.Tapped += (s, item) =>
+            {
+                Navigation.PushModalAsync(new ViewRepliesPage(offer.global_offer_id, "respondtooffer"), false);
+            };
+            viewRepliesBtn.GestureRecognizers.Add(tapGestureRecognizerForViewReplies);
+
+            var tapGestureRecognizerForViewComment = new TapGestureRecognizer();
+            tapGestureRecognizerForViewComment.Tapped += (s, item) =>
+            {
+                Navigation.PushModalAsync(new AddOfrCommentPage(offer.global_offer_id,offerTitle.Text, "respondtooffer"), false);
+            };
+            viewCommentBtn.GestureRecognizers.Add(tapGestureRecognizerForViewComment);
+
+            var recognizerForTopDotIcon = new TapGestureRecognizer();
+            recognizerForTopDotIcon.Tapped += async (s, e) =>
+            {
+                var action = await DisplayActionSheet("", null, null, "Message", "Report","Cancel");
+                if (action == "Message")
+                {
+                    var chatinfo = new ChatInfo(offer.offerSender, chat_title, "", "0", 0, "", "");
+
+                    if (chat_pp == "")
+                        chatinfo.groupChatImage = offerCreatorImage;
+                    else
+                        chatinfo.groupChatImage = chat_pp;
+
+                    chatinfo.memberimgurls.Add(offerCreatorImage);
+                    chatinfo.memberimgurls.Add(Settings.getProfilePic());
+
+                    chatinfo.chatmembersUids.Add(offer.creator);
+                    chatinfo.chatmembersUids.Add(Settings.getUID());
+
+                    chatinfo.userid = offer.creator;
+                    chatinfo.chatid = chatId;
+
+                    await Navigation.PushModalAsync(new ChatIndPage(chatinfo), false);
+
+                }
+                else if (action == "Report")
+                {
+                    await Navigation.PushModalAsync(new ReportToOfferPage(global_offer_id,offerCreatorImage), false);
+
+                }
+            };
+            topdoticon.GestureRecognizers.Add(recognizerForTopDotIcon);
+
+            getChatInfo(offer.creator);
+
+            loadItems(offer.global_offer_id);
+           
+        }
+        async void getChatInfo(String other_user)
+        {
+            var response = await Connection.FindUserChatAsync(other_user);
+            dynamic dynObj = JsonConvert.DeserializeObject(response);
+            var status = dynObj.status;
+            if (status == 0 || status == "0")
+            {
+                dynamic userchatgroup = JsonConvert.DeserializeObject(dynObj.userchatgroup.ToString());
+                try
+                {
+                    chat_title = userchatgroup.title.ToString(); ;
+                    chat_pp = userchatgroup.pic.ToString();
+
+                    chatId = userchatgroup.chat_id.ToString();
+                }
+                catch (Exception e)
+                {
+
+                }
+            }
+
+        }
+        private async void AcceptOfferButton_Clicked()
+        {
+            spinner.IsRunning = true;
+            disablePage();
+            AcceptOfferButton.BackgroundColor = Color.FromHex("3a8f92");
+
+            var response = await Connection.RespondToOffer(currentOffer.global_offer_id, "accept");
+            if (response == null || response.Contains("html"))
+            {
+                await DisplayAlert("Status", "Server is down please try after some time.", "Ok");
+
+            }
+            else
+            {
+                dynamic dynObj = JsonConvert.DeserializeObject(response);
+                var status = dynObj.status.ToString();
+                if (status == "0")
+                {
+                    currentOffer.acceptance = Offer.Acceptance.ACCEPTED;
+                    db.UpdateOffer(currentOffer);
+                }
+                else
+                {
+                    await DisplayAlert("Status", dynObj.error_message.ToString(), "Ok");
+                }
+            }
+            spinner.IsRunning = false;
+            await Navigation.PushModalAsync(new HomePage(), false);
+
+        }
+        private async void RejectOfferButton_Clicked()
+         {
+            spinner.IsRunning = true;
+            disablePage();
+            DeclineOfferButton.BackgroundColor = Color.FromHex("b64f2f");
+
+            var response = await Connection.RespondToOffer(currentOffer.global_offer_id, "decline");
+            if (response == null || response.Contains("html"))
+            {
+                await DisplayAlert("Status", "Server is down please try after some time.", "Ok");
+
+            }
+            else
+            {
+                dynamic dynObj = JsonConvert.DeserializeObject(response);
+                var status = dynObj.status.ToString();
+                if (status == "0")
+                {
+                    currentOffer.acceptance = Offer.Acceptance.REJECTED;
+                    db.UpdateOffer(currentOffer);
+                }
+                else
+                {
+                    await DisplayAlert("Status", dynObj.error_message.ToString(), "Ok");
+                }
+            }
+
+            spinner.IsRunning = false;
+            await Navigation.PushModalAsync(new HomePage(), false);
+        }
+        //timer method 
+        void CheckStatus(Object state)
+        {
+            var offer = db.GetOfferByGlobalOfferId(currentOffer.global_offer_id);
+           if (offer.active == Offer.Active.INACTIVE)
+            {
+                Device.BeginInvokeOnMainThread(() => {
+                    disablePage();
+                    scrolview.Content = respondToOffer.sorryText;
+                });
+
+            }
+            else
+            {
+                string timeLeftString = currentOffer.timeLeftUntillExpirationToString();
+                if (timeLeftString.Equals("00:00:00") || timeLeftString.Equals("Expired!"))
+                {
+                    Device.BeginInvokeOnMainThread(() => {
+                        disablePage();
+                        scrolview.Content = respondToOffer.sorryText1;
+                    });
+                }
+                else
+                {
+                    Device.BeginInvokeOnMainThread(() => { offerExpiration.Text = timeLeftString; });
+                }
+            }
+        }
+        // when responds to offer, disable the buttons
+        void disablePage()
+        {
+            AcceptOfferButton.IsEnabled = false;
+            DeclineOfferButton.IsEnabled = false;
+            // stop or destroy the timer
+            timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+        protected override void OnDisappearing()
+        {
+            if (timer != null)
+                timer.Change(Timeout.Infinite, Timeout.Infinite);
+
+        }
+        protected async void loadItems(string offerid){
+            spinner.IsRunning = true;
+            var response = await Connection.ViewOfferStatus1(offerid);
+            JObject results = JObject.Parse(response);
+            var can_view_responders = results["can_view_responders"].ToString();
+            //Console.WriteLine("can_view_responders ====" + results["comments"].ToString());
+            JArray array = JArray.Parse(results["comments"].ToString());
+            if (can_view_responders == "True" || can_view_responders == "true")
+            {
+                //viewRepliesBtn.IsVisible = true;
+                //viewCommentBtn.IsVisible = true;
+                //vertical_icon.IsVisible = true;
+                //Console.WriteLine("array.Count ====" + array.Count);
+                viewCommentBtn.Text = "Comments(" + array.Count + ")";
+                spinner.IsRunning = false;
+            }
+            else {
+                viewRepliesBtn.IsVisible = false;
+                viewCommentBtn.IsVisible = false;
+                vertical_icon.IsVisible = false;
+                spinner.IsRunning = false;
+            }
+        }
+    }
+}
+
+
+
+//using System;
+//using System.IO;
+//using System.Threading;
+//using ImageCircle.Forms.Plugin.Abstractions;
+//using Xamarin.Forms;
+
+//namespace UI_test_cross_platform
+//{
+//    public class RespondToOfferPage : MyContentPage
+//    {
+//        ActivityIndicator spinner = CommonUtility.spinner;
+//        //timer 
+//        System.Threading.Timer timer;
+//        Image AcceptOfferButton;
+//        Image DeclineOfferButton;
+
+//        UI_test_cross_platform.OffersDatabase.OfferDbEntry currentOffer;
+//        Label creatorName;
+//        Label offerTitle;
+//        Label offerDescription;
+//        Label offerDate;
+//        Label offerLocation;
+//        Label offerExpiration;
+//        Image hamb_img;
+//        Image back_icon;
+//        //Image home_icon ;
+//        Image ls_img;
+//        //Image accept_icon;
+//        //Image new_offer_icon;
+//        //Image folder_icon;
+//        OffersDatabase db;
+//        //Grid bottomGrid;
+//        Grid topGrid;
+//        Grid contentGrid;
+//        RespondToOffer respondToOffer;
+//        Button viewRepliesBtn;
+//        void initializeElements()
+//        {
+//            //acceptRejectBtnClicked = false;
+//            respondToOffer = new RespondToOffer();
+//            AcceptOfferButton = respondToOffer.AcceptOfferButton;
+//            DeclineOfferButton = respondToOffer.DeclineOfferButton;
+//            viewRepliesBtn = respondToOffer.viewRepliesBtn;
+//            viewRepliesBtn.IsVisible = false;
+//            creatorName = respondToOffer.creatorName;
+//            offerTitle = respondToOffer.offerTitle;
+//            offerDescription = respondToOffer.offerDescription;
+//            offerDate = respondToOffer.offerDate;
+//            offerLocation = respondToOffer.offerLocation;
+//            offerExpiration = respondToOffer.offerExpiration;
+
+//            back_icon = CommonUtility.getBackIcon();
+//            hamb_img = CommonUtility.getHambIcon();
+//            ls_img = CommonUtility.getLineSepImage();
+//            // bottomGrid = CommonUtility.getBottomGrid();
+//            contentGrid = respondToOffer.contentGrid;
+//        }
+//        ScrollView scrolview;
+//        public RespondToOfferPage(string global_offer_id)
+//        {
+//            initializeElements();
+     
+//            var offerJson = Connection.ViewOfferStatus(global_offer_id);
+//            offerJson.ContinueWith((o) =>
+//            {
+//                var r = o.Result;
+//                if (r.can_view_responders)
+//                    viewRepliesBtn.IsVisible = true;
+//            });
+
+
+//            db = new OffersDatabase(OffersDatabase.DefaultDatabaseName);
+//            var offer = db.GetOfferByGlobalOfferId(global_offer_id);
+//            currentOffer = offer;
+//            creatorName.Text = offer.offerSender;
+//            // content grid data
+//            if (offer.offerSender == null || offer.offerSender == "")
+//                creatorName.Text = "Admin";//offer.offerSender;
+//            offerTitle.Text = offer.title;
+//            offerDescription.Text = offer.message;
+//            offerDate.Text = offer.eventdate.ToLocalTime().ToLongDateString() + " " + offer.eventdate.ToLocalTime().ToShortTimeString();
+//            offerLocation.Text = offer.location;
+//            offerExpiration.Text = offer.timeLeftUntillExpirationToString();//offer.expirationdate.ToLocalTime().ToLongDateString() + " " + offer.expirationdate.ToLocalTime().ToLongTimeString();
+//            var s1 = new StackLayout
+//            {
+//                Children ={
+//                    new Label{Text="Description:",TextColor=Color.White,FontSize=CommonFont.fontSize20},
+//                    offerDescription
+//                }
+//            };
+//            var s2 = new StackLayout
+//            {
+//                Children ={
+//                    new Label{Text="When:",TextColor=Color.White,FontSize=CommonFont.fontSize20},
+//                    offerDate
+//                }
+//            };
+//            var s3 = new StackLayout
+//            {
+//                Children ={
+//                    new Label{Text="Where:",TextColor=Color.White,FontSize=CommonFont.fontSize20},
+//                    offerLocation
+//                }
+//            };
+//            Image offershelf = new Image { Source = CommonUtility.getOfferSelf(0), Margin = new Thickness(10, 0, 10, 10) };
+//            var s4 = new StackLayout
+//            {
+//                Children ={
+//                    offershelf
+//                }
+//            };
+//            contentGrid.Children.Add(offerTitle, 1, 9, 0, 1);
+//            contentGrid.Children.Add(s1, 1, 9, 2, 3);//4,5
+//            contentGrid.Children.Add(s2, 1, 9, 3, 4);//6,7
+//            contentGrid.Children.Add(s3, 1, 9, 4, 5);//8,9
+
+//            contentGrid.Children.Add(s4, 0, 10, 6, 10);//10.14
+//            contentGrid.Children.Add(offerExpiration, 0, 10, 7, 8);//11,12
+//            contentGrid.Children.Add(AcceptOfferButton, 0, 5, 8, 9);//12,13
+//            contentGrid.Children.Add(DeclineOfferButton, 5, 10, 8, 9);//12,13
+
+//            contentGrid.Children.Add(spinner, 4, 6, 10, 11);//14,15
+//            contentGrid.Children.Add(viewRepliesBtn, 0, 10, 11, 12);//15,16
+
+//            var bottomGrigLayout = new StackLayout
+//            {
+//                VerticalOptions = LayoutOptions.EndAndExpand,
+//                Children = {
+//                    bottomGrid
+//                }
+//            };
+//            topGrid = CommonUtility.getTopGrid();
+
+//            topGrid.Children.Add(back_icon, 0, 1, 0, 1);
+//            topGrid.Children.Add(creatorName, 1, 9, 0, 1);
+//            topGrid.Children.Add(hamb_img, 9, 10, 0, 1);
+//            topGrid.Children.Add(ls_img, 0, 10, 1, 2);
+
+
+//            Image bg_img = CommonUtility.getBackgroungImage();//background image
+//            var outer = new Grid();
+//            outer.Children.Add(bg_img);//for holding bg image
+
+//            scrolview = new ScrollView { Content = contentGrid };
+//            var layout = new StackLayout
+//            {
+//                Spacing = 1,
+//                Children ={
+//                    topGrid,
+//                    scrolview,
+//                    bottomGrigLayout
+//                }
+//            };
+
+//            var inner = new Grid();//for holding content
+//            inner.Children.Add(layout);
+//            outer.Children.Add(inner);
+
+//            Content = outer;
+//            MessagingCenter.Subscribe<string>(this, MessagingCenterHelper.UPDATE_RESPONDTOOFFER_TIME_REMAINING, async (timeLeft) =>
+//            {
+//                try
+//                {
+//                    offerExpiration.Text = timeLeft;
+//                }
+//                catch (Exception e)
+//                {
+//                    Console.WriteLine(e);
+//                }
+
+//            });
+
+//            var tapGestureRecognizerAcceptOfferButton = new TapGestureRecognizer();
+//            tapGestureRecognizerAcceptOfferButton.Tapped += (s, item) =>
+//            {
+//                AcceptOfferButton_Clicked();
+//            };
+//            AcceptOfferButton.GestureRecognizers.Add(tapGestureRecognizerAcceptOfferButton);
+
+
+//            var tapGestureRecognizerDeclineOfferButton = new TapGestureRecognizer();
+//            tapGestureRecognizerDeclineOfferButton.Tapped += (s, item) =>
+//            {
+//                RejectOfferButton_Clicked();
+//            };
+//            DeclineOfferButton.GestureRecognizers.Add(tapGestureRecognizerDeclineOfferButton);
+
+//            var tapGestureRecognizerBackIcon = new TapGestureRecognizer();
+//            tapGestureRecognizerBackIcon.Tapped += (s, item) =>
+//            {
+//                Navigation.PushModalAsync(new HomePage(), false);
+//            };
+//            back_icon.GestureRecognizers.Add(tapGestureRecognizerBackIcon);
+
+//            var tapGestureRecognizerHamburIcon = new TapGestureRecognizer();
+//            tapGestureRecognizerHamburIcon.Tapped += (s, item) =>
+//            {
+//                try
+//                {
+//                    Navigation.PushModalAsync(new HambMenuPage("respondtooffer"), false);
+//                }
+//                catch (Exception e)
+//                {
+//                    Console.WriteLine(e.Message);
+//                }
+
+//            };
+//            hamb_img.GestureRecognizers.Add(tapGestureRecognizerHamburIcon);
+//            //timer
+//            timer = new System.Threading.Timer(new System.Threading.TimerCallback(this.CheckStatus), null, 1000, 1000);
+
+//            viewRepliesBtn.Clicked += (s, e) => {
+//                Navigation.PushModalAsync(new ViewRepliesPage(offer.global_offer_id), false);
+//            };
+//        }
+//        private async void AcceptOfferButton_Clicked()
+//        {
+//            spinner.IsRunning = true;
+//            disablePage();
+//            AcceptOfferButton.BackgroundColor = Color.FromHex("3a8f92");
+
+//            var status = await Connection.RespondToOffer(currentOffer.global_offer_id, Connection.OfferResponse.ACCEPT);
+//            if (status == null || status.Contains("html"))
+//            {
+//                await DisplayAlert("Status", "Server is down please try after some time.", "Ok");
+
+//            }
+
+//            else if (status.Contains("Thank you for accepting"))
+//            {
+//                currentOffer.acceptance = Offer.Acceptance.ACCEPTED;
+//                int rows_updated = db.UpdateOffer(currentOffer);
+//                //Console.WriteLine("Rows updated: " + rows_updated);
+//            }
+//            //test123 test test
+//            else
+//            {
+//                await DisplayAlert("Status", status, "Ok");
+//            }//
+//            spinner.IsRunning = false;
+//            await Navigation.PushModalAsync(new HomePage(), false);
+
+//        }
+//        private async void RejectOfferButton_Clicked()
+//        {
+//            spinner.IsRunning = true;
+//            disablePage();
+//            DeclineOfferButton.BackgroundColor = Color.FromHex("b64f2f");
+//            var status = await Connection.RespondToOffer(currentOffer.global_offer_id, Connection.OfferResponse.REJECT);
+//            if (status == null || status.Contains("html"))
+//            {
+//                await DisplayAlert("Status", "Server is down please try after some time.", "Ok");
+
+//            }
+//            else
+//            {
+//                currentOffer.acceptance = Offer.Acceptance.REJECTED;
+//                db.UpdateOffer(currentOffer);
+//            }
+//            spinner.IsRunning = false;
+//            await Navigation.PushModalAsync(new HomePage(), false);
+//        }
+//        //timer method 
+//        void CheckStatus(Object state)
+//        {
+//            var offer = db.GetOfferByGlobalOfferId(currentOffer.global_offer_id);
+//            if (offer.active == Offer.Active.INACTIVE)
+//            {
+//                Device.BeginInvokeOnMainThread(() => {
+//                    disablePage();
+//                    scrolview.Content = respondToOffer.sorryText;
+//                });
+
+//            }
+//            else
+//            {
+//                string timeLeftString = currentOffer.timeLeftUntillExpirationToString();
+//                if (timeLeftString.Equals("00:00:00") || timeLeftString.Equals("Expired!"))
+//                {
+//                    Device.BeginInvokeOnMainThread(() => {
+//                        disablePage();
+//                        scrolview.Content = respondToOffer.sorryText1;
+//                    });
+//                }
+//                else
+//                {
+//                    Device.BeginInvokeOnMainThread(() => { offerExpiration.Text = timeLeftString; });
+//                }
+//            }
+//        }
+//        // when responds to offer, disable the buttons
+//        void disablePage()
+//        {
+//            AcceptOfferButton.IsEnabled = false;
+//            DeclineOfferButton.IsEnabled = false;
+//            // stop or destroy the timer
+//            timer.Change(Timeout.Infinite, Timeout.Infinite);
+//        }
+//        protected override void OnDisappearing()
+//        {
+//            if (timer != null)
+//                timer.Change(Timeout.Infinite, Timeout.Infinite);
+
+//        }
+
+//    }
+//}
