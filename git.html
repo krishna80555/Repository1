@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> 
+<script type="text/javascript">
+$(document).ready(function(){
+		  $.ajax({
+			      type: "POST",
+			      url:"https://api.github.com/repos/krishna80555/Repository1/contents/test.txt",
+				  async:true,
+		          crossDomain:true,
+		          dataType: "json",
+		          data: JSON.stringify({
+		        	  "message":"hihh",
+		        	  "branch": "master",
+		        	  "content":"SkFWQSBURVNU"
+   				  }),
+   				  headers: {
+   			         'Content-Type':'application/json',
+   			         'Authorization': 'Bearer 9e9e52645e2590650f477de36f5d36e9bcd06c20'
+   			      },
+			      success: function (data, status, xhr) {
+                    alert(xhr.responseText);
+			      },
+			      error: function (jqXhr, textStatus, errorMessage) {
+			    	  $('.cover-spin').hide();
+			       }
+			      
+		      });
+});
+</script>
+</head>
+<body>
+
+</body>
+
+</html>
